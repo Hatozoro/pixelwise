@@ -1,0 +1,31 @@
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secret files (Configuration / Credentials)
+.env
+*.secret
+credentials.json
+
+# Dataset directories & model checkpoints
+datasets/
+data/
+*.h5
+*.pkl
+checkpoints/
+
+# Editor files (VS Code, JetBrains, Vim)
+.vscode/
+.idea/
+*.swp
+*~
+
+
+
