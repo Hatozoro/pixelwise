@@ -1,1 +1,1 @@
-# PixelWise, Web-Anwendung für das Projekt
+# PixelWise, Alternative Web-Anwendung für das Projekt.
