@@ -3,20 +3,50 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PixelWise</title>
+    <title>PixelWise - DataForge</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>PixelWise</h1>
-    <p>Draw a digit, then click Classify.</p>
-    <canvas id="pad" width="280" height="280"></canvas>
-    <div class="controls">
-        <button id="classify">Classify</button>
-        <button id="clear">Clear</button>
+    <h1>PixelWise x DataForge</h1>
+
+    <div class="container">
+        <label for="username"><strong>Spielername:</strong></label>
+        <input type="text" id="username" value="User1" style="margin-left: 10px; padding: 5px;">
     </div>
-    <div id="result"></div>
-    <h2>Recent predictions</h2>
-    <ul id="history"></ul>
+
+    <div id="creator-section" class="container">
+        <h2>Creator-Modus</h2>
+        <p>Aufforderung: Zeichne eine <strong id="target-digit" style="font-size: 24px; color: #007bff;">5</strong></p>
+        <p>Zeit übrig: <strong id="timer-display" style="color: red;">3</strong> Sekunden</p>
+        
+        <canvas id="pad" width="280" height="280" style="border: 2px solid #333; background: #000;"></canvas>
+        
+        <div class="controls" style="margin-top: 10px;">
+            <button id="classify">Absenden und Klassifizieren</button>
+            <button id="clear">Spielfeld leeren</button>
+        </div>
+        <div id="result" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div id="jury-section" class="container" style="margin-top: 20px; padding: 15px; border: 1px dashed #666;">
+        <h2>Jury-Modus</h2>
+        <div id="jury-task-box">
+            <p>Hat der vorherige Spieler die Ziffer richtig gezeichnet?</p>
+            <p>Die KI vermutet hier eine: <strong id="jury-prediction" style="font-size: 20px;">?</strong></p>
+            <input type="hidden" id="jury-prediction-id">
+            <div class="controls">
+                <button id="jury-correct" style="background-color: green; color: white;">Ja, korrekt</button>
+                <button id="jury-troll" style="background-color: red; color: white;">Nein, das ist ein Troll</button>
+            </div>
+        </div>
+        <div id="jury-feedback" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container" style="margin-top: 20px;">
+        <h2>Top 10 Leaderboard</h2>
+        <ul id="leaderboard-list"></ul>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
