@@ -1112,6 +1112,26 @@ async function submitVote(vote) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadLeaderboard();
 setInterval(loadLeaderboard, 15000);
+
+async function loadPlayerScore() {
+    try {
+        const res = await fetch("/api/leaderboard");
+        const rows = await res.json();
+        const me = rows.find(r => r.username === getUsername());
+        if (me) {
+            totalScore = me.score;
+            const level = Math.floor(totalScore / 500) + 1;
+            const xpInLevel = totalScore % 500;
+            document.getElementById("xpFill").style.width = (xpInLevel / 500 * 100) + "%";
+            document.getElementById("xpLevel").textContent = "LVL " + level;
+            updateBrush(totalScore);
+        }
+    } catch(e) {}
+}
+
+loadPlayerScore();
+
+document.getElementById("usernameInput").addEventListener("change", loadPlayerScore);
 </script>
 </body>
 </html>
