@@ -3,10 +3,10 @@ Description=PixelWise API
 After=network.target
 
 [Service]
-User=hatozoro
-WorkingDirectory=/opt/pixelwise
-EnvironmentFile=/opt/pixelwise/.env
-ExecStart=/opt/pixelwise/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+User=habib
+WorkingDirectory=/home/habib/pixelwise
+EnvironmentFile=/home/habib/pixelwise/.env
+ExecStart=/home/habib/pixelwise/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3
 

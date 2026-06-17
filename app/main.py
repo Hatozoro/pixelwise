@@ -1,112 +1,209 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
-import random
-from app.classifier import classify_batch
-from app.models import Prediction, User, SessionLocal
-
-class ClassifyRequest(BaseModel):
-    pixels: list[list[int]]
-    username: str
-    target_label: int
-
-class ClassifyResponse(BaseModel):
-    prediction: str
-    confidence: float
-    scores: dict[str, float]
-
-class JurySubmitRequest(BaseModel):
-    username: str
-    prediction_id: int
-    is_correct: bool
+import joblib
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = FastAPI()
 
-@app.get("/health")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "models", "digit_classifier_v1.pkl")
+
+model = None
+try:
+    model = joblib.load(MODEL_PATH)
+    print("Modell erfolgreich geladen!")
+except Exception as e:
+    print(f"Fehler beim Laden: {e}")
+
+DB_CONFIG = {
+    "dbname": "pixelwise",
+    "user": "pixelwise",
+    "password": "pixelwise",
+    "host": "localhost"
+}
+
+def get_db():
+    return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+
+class ClassifyRequest(BaseModel):
+    pixels: list[float]
+    target_label: int
+    username: str = "Anonym"
+
+class JuryVoteRequest(BaseModel):
+    task_id: int
+    vote: str
+    validator_name: str
+
+@app.get("/api/health")
 def health():
-    return {"status": "ok", "model_version": "v1"}
+    return {"status": "ok", "model_loaded": model is not None}
 
-@app.get("/leaderboard")
-def leaderboard():
-    db = SessionLocal()
-    users = db.query(User).order_by(User.score.desc()).limit(10).all()
-    db.close()
-    return [{"username": u.username, "score": u.score, "trust_score": u.trust_score} for u in users]
-
-@app.post("/classify", response_model=ClassifyResponse)
+@app.post("/api/classify")
 def classify(req: ClassifyRequest):
-    arr = np.array(req.pixels, dtype=np.uint8)[np.newaxis]
-    result = classify_batch(arr)[0]
-    
-    db = SessionLocal()
-    
-    # 1. Vorhersage in der Datenbank speichern mega 
-    db.add(Prediction(
-        prediction=result["prediction"],
-        confidence=result["confidence"],
-        model_version="v1",
-        is_honeypot=False
-    ))
-    
-    # 2. Punkte berechnen und das Profil des Users aktualisieren
-    points = 0
-    if result["prediction"] == str(req.target_label):
-        conf = result["confidence"]
-        points = int(conf * 100) if conf <= 1.0 else int(conf)
-        
-    user = db.query(User).filter(User.username == req.username).first()
-    if not user:
-        user = User(username=req.username, score=0, trust_score=100)
-        db.add(user)
-        
-    user.score += points
-    db.commit()
-    db.close()
-    
-    return result
+    if len(req.pixels) != 784:
+        raise HTTPException(status_code=400, detail="Pixel-Array muss genau 784 Werte enthalten.")
+    if model is None:
+        raise HTTPException(status_code=503, detail="Modell nicht geladen.")
 
-@app.get("/jury/task")
-def get_jury_task():
-    db = SessionLocal()
-    # holt mit einer Chance von 50 Prozent einen Honeypot zur Überprüfung
-    if random.random() < 0.5:
-        task = db.query(Prediction).filter(Prediction.is_honeypot == True).first()
+    pixel_array = np.array(req.pixels, dtype=np.float32).reshape(1, -1)
+    proba = model.predict_proba(pixel_array)[0]
+    predicted_label = int(np.argmax(proba))
+    confidence = float(proba[req.target_label])
+
+    if predicted_label == req.target_label:
+        score_gained = round(confidence * 100)
     else:
-        task = None
-        
-    if not task:
-        task = db.query(Prediction).order_by(Prediction.created_at.desc()).limit(20).all()
-        if task:
-            task = random.choice(task)
-            
-    db.close()
-    
-    if not task:
-        return {"error": "Keine Aufgaben vorhanden"}
-        
+        score_gained = 0
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO users (username, score, trust_score) VALUES (%s, %s, 50) ON CONFLICT (username) DO UPDATE SET score = users.score + %s",
+                (req.username, score_gained, score_gained)
+            )
+            pixel_string = ",".join(str(int(p)) for p in req.pixels)
+            cur.execute(
+                "INSERT INTO jury_tasks (creator, predicted_label, target_label, pixels, status) VALUES (%s, %s, %s, %s, 'pending')",
+                (req.username, predicted_label, req.target_label, pixel_string)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
     return {
-        "prediction_id": task.id,
-        "prediction": task.prediction,
-        "is_honeypot": task.is_honeypot
+        "predicted_digit": predicted_label,
+        "target_digit": req.target_label,
+        "confidence": round(confidence * 100, 2),
+        "score_gained": score_gained,
+        "correct": predicted_label == req.target_label
     }
 
-@app.post("/jury/submit")
-def submit_jury_review(req: JurySubmitRequest):
-    db = SessionLocal()
-    
-    task = db.query(Prediction).filter(Prediction.id == req.prediction_id).first()
-    user = db.query(User).filter(User.username == req.username).first()
-    
-    if not user:
-        user = User(username=req.username, score=0, trust_score=100)
-        db.add(user)
-        
-    if task and task.is_honeypot:
-        # Hier prüfe ob die Jury-Wertung mit dem echten Honeypot Label übereinstimmt
-        actual_is_correct = (task.prediction == str(task.expected_label))
-        if req.is_correct != actual_is_correct:
-            user.trust_score = max(0, user.trust_score // 2)
-            
-    db.commit()
-    db.close()
-    return {"status": "success", "new_trust_score": user.trust_score}
+@app.post("/api/jury/vote")
+def jury_vote(req: JuryVoteRequest):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Trust-Score des Validators holen
+            cur.execute("SELECT trust_score FROM users WHERE username = %s", (req.validator_name,))
+            row = cur.fetchone()
+            validator_trust = row["trust_score"] if row else 50
+
+            # Task holen um Creator zu kennen
+            cur.execute("SELECT creator, is_honeypot, expected_label FROM jury_tasks WHERE id = %s", (req.task_id,))
+            task = cur.fetchone()
+            if not task:
+                raise HTTPException(status_code=404, detail="Task nicht gefunden.")
+
+            creator = task["creator"]
+            is_honeypot = task["is_honeypot"] if task["is_honeypot"] is not None else False
+            expected_label = task["expected_label"]
+
+            # Honeypot-Prüfung
+            honeypot_penalty = False
+            if is_honeypot and expected_label is not None:
+                # "troll" ist die korrekte Antwort auf Quatsch-Honeypots (expected_label = -1)
+                # "correct" ist die korrekte Antwort auf echte Honeypots
+                correct_honeypot_vote = "troll" if expected_label == -1 else "correct"
+                if req.vote != correct_honeypot_vote:
+                    honeypot_penalty = True
+
+            # Task als validiert markieren
+            cur.execute(
+                "UPDATE jury_tasks SET status = %s, validator = %s WHERE id = %s",
+                (req.vote, req.validator_name, req.task_id)
+            )
+
+            # Validator bekommt +5 Score fürs Mitmachen
+            # Trust-Score: steigt bei korrektem Honeypot, sinkt bei falschem
+            if honeypot_penalty:
+                # Trust halbieren, max 100
+                cur.execute("""
+                    UPDATE users SET trust_score = GREATEST(1, trust_score / 2)
+                    WHERE username = %s
+                """, (req.validator_name,))
+                validator_xp = 0
+            else:
+                # Trust leicht erhöhen bei korrektem Honeypot oder normalem Vote
+                trust_gain = 2 if is_honeypot else 0
+                cur.execute("""
+                    UPDATE users
+                    SET score = score + 5,
+                        trust_score = LEAST(100, trust_score + %s)
+                    WHERE username = %s
+                """, (trust_gain, req.validator_name))
+                # Neuen User anlegen falls nicht vorhanden
+                cur.execute("""
+                    INSERT INTO users (username, score, trust_score)
+                    VALUES (%s, 5, 50)
+                    ON CONFLICT (username) DO NOTHING
+                """, (req.validator_name,))
+                validator_xp = 5
+
+            # Troll-Vote: Creator verliert Punkte und Trust
+            if req.vote == "troll":
+                cur.execute("""
+                    UPDATE users
+                    SET score = GREATEST(0, score - 20),
+                        trust_score = GREATEST(1, trust_score - 10)
+                    WHERE username = %s
+                """, (creator,))
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "status": "ok",
+        "validator_trust": validator_trust,
+        "honeypot_penalty": honeypot_penalty,
+        "validator_xp": validator_xp
+    }
+
+@app.get("/api/leaderboard")
+def leaderboard():
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT username, score, trust_score FROM users ORDER BY score DESC LIMIT 20")
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+@app.get("/api/jury/task")
+def jury_task(username: str = ""):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 30% Chance auf Honeypot falls welche verfügbar
+            cur.execute(
+                "SELECT id, creator, target_label, predicted_label, pixels, is_honeypot FROM jury_tasks WHERE status = 'pending' AND is_honeypot = TRUE LIMIT 1"
+            )
+            honeypot = cur.fetchone()
+
+            import random
+            if honeypot and random.random() < 0.3:
+                return honeypot
+
+            # Sonst normaler Task
+            cur.execute(
+                "SELECT id, creator, target_label, predicted_label, pixels, is_honeypot FROM jury_tasks WHERE status = 'pending' AND creator != %s AND (is_honeypot IS NULL OR is_honeypot = FALSE) LIMIT 1",
+                (username,)
+            )
+            row = cur.fetchone()
+            if row is None:
+                return None
+            return row
+    finally:
+        conn.close()

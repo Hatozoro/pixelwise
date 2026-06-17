@@ -1,52 +1,1078 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PixelWise - DataForge</title>
-    <link rel="stylesheet" href="style.css">
+    <title>PixelWise x DataForge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep:    #0a0a0f;
+            --bg-card:    #0d1117;
+            --bg-panel:   #13151f;
+            --border:     #1e2030;
+            --border-glow:#00f5ff33;
+            --cyan:       #00f5ff;
+            --cyan-dim:   #00f5ff55;
+            --purple:     #bf5fff;
+            --purple-dim: #bf5fff44;
+            --green:      #00ff88;
+            --red:        #ff4466;
+            --yellow:     #ffcc00;
+            --text:       #e8e8f0;
+            --text-muted: #6b7280;
+            --text-dim:   #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+
+        /* HEADER */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 18px 0;
+            background: var(--bg-deep);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+            color: var(--cyan);
+            text-shadow: 0 0 20px var(--cyan-dim);
+        }
+
+        .logo span { color: var(--purple); }
+
+        .player-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
+
+        .player-badge input {
+            background: transparent;
+            border: none;
+            color: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            width: 160px;
+            outline: none;
+        }
+
+        .player-dot {
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* XP BAR */
+        .xp-bar-wrap {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 0;
+        }
+
+        .xp-bar-inner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .xp-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        .xp-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 8px var(--cyan-dim);
+        }
+
+        .xp-level {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: var(--yellow);
+            white-space: nowrap;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-deep);
+            position: sticky;
+            top: 61px;
+            z-index: 90;
+        }
+
+        .tab-btn {
+            padding: 14px 28px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-btn:hover { color: var(--text-dim); }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+            text-shadow: 0 0 12px var(--cyan-dim);
+        }
+
+        .tab-btn .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px; height: 18px;
+            background: var(--purple);
+            border-radius: 50%;
+            font-size: 0.55rem;
+            margin-left: 6px;
+            color: white;
+            vertical-align: middle;
+        }
+
+        /* PANELS */
+        .panel { display: none; padding: 32px 0 60px; }
+        .panel.active { display: block; }
+
+        /* CREATOR MODE */
+        .creator-layout {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .canvas-block { position: relative; }
+
+        .target-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 14px;
+            margin-bottom: 12px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .target-digit-display {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 16px var(--cyan);
+            font-family: 'Orbitron', monospace;
+            line-height: 1;
+        }
+
+	#drawCanvas {
+    	display: block;
+    	cursor: crosshair;
+	border: 1px solid var(--border);
+    	border-radius: 8px;
+    	background: #fff;
+    	image-rendering: pixelated;
+    	box-shadow: 0 0 0 1px var(--border-glow), 0 0 30px var(--cyan-dim);
+    	transition: box-shadow 0.3s;
+	}
+
+        #drawCanvas:hover {
+            box-shadow: 0 0 0 1px var(--cyan-dim), 0 0 40px var(--cyan-dim);
+        }
+
+        .canvas-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .countdown-ring {
+            position: relative;
+            width: 44px; height: 44px;
+        }
+
+        .countdown-ring svg { transform: rotate(-90deg); }
+        .countdown-ring circle { fill: none; stroke: var(--border); stroke-width: 3; }
+        .countdown-ring .progress { stroke: var(--cyan); stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+
+        .countdown-number {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .btn-clear {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+        /* RIGHT PANEL */
+        .creator-right { display: flex; flex-direction: column; gap: 20px; }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px var(--cyan-dim);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px var(--cyan-dim);
+        }
+
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* RESULT CARD */
+        .result-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .result-card.correct { border-color: var(--green); box-shadow: 0 0 20px #00ff8822; }
+        .result-card.wrong   { border-color: var(--red);   box-shadow: 0 0 20px #ff446622; }
+
+        .result-score {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .result-score.correct { color: var(--green); text-shadow: 0 0 20px var(--green); }
+        .result-score.wrong   { color: var(--red);   text-shadow: 0 0 20px var(--red); }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .confidence-bar-wrap { width: 100%; margin-top: 14px; }
+
+        .confidence-bar-track {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .confidence-bar-fill.correct { background: linear-gradient(90deg, var(--green), #00ffaa); box-shadow: 0 0 8px var(--green); }
+        .confidence-bar-fill.wrong   { background: linear-gradient(90deg, var(--red), #ff8866); }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* STREAK */
+        .streak-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .streak-num {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--yellow);
+            text-shadow: 0 0 16px var(--yellow);
+        }
+
+        .streak-fire { font-size: 1.5rem; }
+
+        .streak-meta { font-size: 0.7rem; color: var(--text-muted); }
+
+        /* LEADERBOARD */
+        .lb-table { width: 100%; border-collapse: collapse; }
+
+        .lb-table th {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 0 12px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lb-row {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .lb-row:hover { background: var(--bg-panel); }
+
+        .lb-row td {
+            padding: 12px;
+            font-size: 0.85rem;
+        }
+
+        .lb-rank {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            width: 40px;
+        }
+
+        .rank-1 { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+        .rank-2 { color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; }
+
+        .lb-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .lb-name.is-you { color: var(--cyan); }
+
+        .lb-score {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--cyan);
+            text-align: right;
+        }
+
+        .trust-pip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .trust-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+
+        /* JURY */
+        .jury-layout {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .jury-preview-wrap { position: relative; }
+
+        #juryCanvas {
+            display: block;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            image-rendering: pixelated;
+            box-shadow: 0 0 20px var(--purple-dim);
+        }
+
+        .jury-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .jury-stat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .jury-stat {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .jury-stat-val {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--purple);
+        }
+
+        .jury-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+
+        .verdict-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .verdict-btn {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-panel);
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .verdict-btn:hover { transform: translateX(4px); }
+        .verdict-btn.correct-btn:hover { border-color: var(--green); color: var(--green); background: #00ff8810; }
+        .verdict-btn.wrong-btn:hover   { border-color: var(--red);   color: var(--red);   background: #ff446610; }
+        .verdict-btn.troll-btn:hover   { border-color: var(--yellow); color: var(--yellow); background: #ffcc0010; }
+
+        .jury-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .jury-empty-icon { font-size: 3rem; margin-bottom: 12px; }
+        .jury-empty-text { font-size: 0.85rem; }
+
+        /* TOAST */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 18px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+        }
+
+        .toast.success { border-color: var(--green); color: var(--green); }
+        .toast.error   { border-color: var(--red);   color: var(--red); }
+        .toast.info    { border-color: var(--cyan);  color: var(--cyan); }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        /* FLASH OVERLAY */
+        .flash-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .flash-overlay.correct { background: radial-gradient(ellipse at center, #00ff8820, transparent 70%); }
+        .flash-overlay.wrong   { background: radial-gradient(ellipse at center, #ff446620, transparent 70%); }
+
+        /* UTILS */
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.14em;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        @media (max-width: 700px) {
+            .creator-layout, .jury-layout { grid-template-columns: 1fr; }
+            #drawCanvas { width: 252px !important; height: 252px !important; }
+        }
+    </style>
 </head>
 <body>
-    <h1>PixelWise x DataForge</h1>
 
-    <div class="container">
-        <label for="username"><strong>Spielername:</strong></label>
-        <input type="text" id="username" value="User1" style="margin-left: 10px; padding: 5px;">
-    </div>
+<div class="flash-overlay" id="flashOverlay"></div>
+<div class="toast-container" id="toastContainer"></div>
 
-    <div id="creator-section" class="container">
-        <h2>Creator-Modus</h2>
-        <p>Aufforderung: Zeichne eine <strong id="target-digit" style="font-size: 24px; color: #007bff;">5</strong></p>
-        <p>Zeit übrig: <strong id="timer-display" style="color: red;">3</strong> Sekunden</p>
-        
-        <canvas id="pad" width="280" height="280" style="border: 2px solid #333; background: #000;"></canvas>
-        
-        <div class="controls" style="margin-top: 10px;">
-            <button id="classify">Absenden und Klassifizieren</button>
-            <button id="clear">Spielfeld leeren</button>
+<header>
+    <div class="container header-inner">
+        <div class="logo">PIXEL<span>WISE</span></div>
+        <div class="player-badge">
+            <div class="player-dot"></div>
+            <input type="text" id="usernameInput" value="HabibTHEGOAT" maxlength="24" spellcheck="false">
         </div>
-        <div id="result" style="margin-top: 10px; font-weight: bold;"></div>
     </div>
+</header>
 
-    <div id="jury-section" class="container" style="margin-top: 20px; padding: 15px; border: 1px dashed #666;">
-        <h2>Jury-Modus</h2>
-        <div id="jury-task-box">
-            <p>Hat der vorherige Spieler die Ziffer richtig gezeichnet?</p>
-            <p>Die KI vermutet hier eine: <strong id="jury-prediction" style="font-size: 20px;">?</strong></p>
-            <input type="hidden" id="jury-prediction-id">
-            <div class="controls">
-                <button id="jury-correct" style="background-color: green; color: white;">Ja, korrekt</button>
-                <button id="jury-troll" style="background-color: red; color: white;">Nein, das ist ein Troll</button>
+<div class="xp-bar-wrap">
+    <div class="container xp-bar-inner">
+        <span class="xp-label">XP</span>
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+        <span class="xp-level" id="xpLevel">LVL 1</span>
+    </div>
+</div>
+
+<div class="tabs">
+    <div class="container" style="display:flex;">
+        <button class="tab-btn active" data-tab="creator">CREATOR</button>
+        <button class="tab-btn" data-tab="jury">JURY<span class="badge" id="juryBadge">0</span></button>
+        <button class="tab-btn" data-tab="leaderboard">RANKING</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- CREATOR PANEL -->
+    <div class="panel active" id="panel-creator">
+        <div class="creator-layout">
+            <div class="canvas-block">
+                <div style="margin-bottom:10px;">
+                    <div class="target-chip">
+                        ZEICHNE DIE ZAHL
+                        <span class="target-digit-display" id="targetDigitDisplay">5</span>
+                    </div>
+                </div>
+                <canvas id="drawCanvas" width="280" height="280"></canvas>
+                <div class="canvas-footer">
+                    <div class="countdown-ring">
+                        <svg width="44" height="44" viewBox="0 0 44 44">
+                            <circle cx="22" cy="22" r="18"/>
+                            <circle class="progress" id="countdownRing" cx="22" cy="22" r="18"
+                                stroke-dasharray="113" stroke-dashoffset="0"/>
+                        </svg>
+                        <div class="countdown-number" id="countdownNum">15</div>
+                    </div>
+                    <button class="btn-clear" id="clearBtn">CLEAR</button>
+                </div>
+            </div>
+
+            <div class="creator-right">
+                <div class="card">
+                    <div class="card-title">Klassifikation abschicken</div>
+                    <button class="btn-submit" id="submitBtn">ANALYSIEREN</button>
+                </div>
+
+                <div class="result-card" id="resultCard">
+                    <div style="color:var(--text-muted); font-size:0.8rem;">Zeichne eine Zahl und klicke Analysieren</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Aktuelle Streak</div>
+                    <div class="streak-display">
+                        <span class="streak-num" id="streakNum">0</span>
+                        <span class="streak-fire" id="streakFire"></span>
+                        <div>
+                            <div style="font-size:0.75rem; color:var(--text-dim);">Richtige in Folge</div>
+                            <div class="streak-meta" id="streakBonus"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="jury-feedback" style="margin-top: 10px;"></div>
     </div>
 
-    <div class="container" style="margin-top: 20px;">
-        <h2>Top 10 Leaderboard</h2>
-        <ul id="leaderboard-list"></ul>
+    <!-- JURY PANEL -->
+    <div class="panel" id="panel-jury">
+        <div class="section-title">VALIDIERUNGSAUFGABE</div>
+        <div id="juryContent">
+            <div class="jury-empty">
+                <div class="jury-empty-icon">⏳</div>
+                <div class="jury-empty-text">Lade Aufgabe...</div>
+            </div>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- LEADERBOARD PANEL -->
+    <div class="panel" id="panel-leaderboard">
+        <div class="section-title">TOP SPIELER</div>
+        <div class="card">
+            <table class="lb-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>SPIELER</th>
+                        <th>TRUST</th>
+                        <th style="text-align:right;">SCORE</th>
+                    </tr>
+                </thead>
+                <tbody id="lbBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = "";
+const N = 28, SCALE = 10;
+let currentTarget = 5;
+let streak = 0;
+let totalScore = 0;
+let countdownTimer = null;
+let timeLeft = 15;
+let currentJuryTask = null;
+let juryTaskCount = 0;
+
+function getUsername() { return document.getElementById("usernameInput").value.trim() || "Anonym"; }
+
+// ── CANVAS SETUP ──────────────────────────────────────────────────────────────
+const pad = document.getElementById("drawCanvas");
+const ctx = pad.getContext("2d");
+const grid = document.createElement("canvas");
+grid.width = N; grid.height = N;
+const gctx = grid.getContext("2d");
+gctx.lineWidth = 2.5; gctx.lineCap = "round"; gctx.lineJoin = "round";
+let drawing = false;
+
+function render() { ctx.drawImage(grid, 0, 0, pad.width, pad.height); }
+
+function clearPad() {
+    gctx.fillStyle = "#fff";
+    gctx.fillRect(0, 0, N, N);
+    render();
+}
+clearPad();
+
+pad.onmousedown = e => { drawing = true; gctx.beginPath(); gctx.moveTo(e.offsetX/SCALE, e.offsetY/SCALE); };
+pad.onmousemove = e => { if (!drawing) return; gctx.lineTo(e.offsetX/SCALE, e.offsetY/SCALE); gctx.stroke(); render(); };
+pad.onmouseup = pad.onmouseleave = () => { drawing = false; };
+
+pad.ontouchstart = e => { e.preventDefault(); const t = e.touches[0]; const r = pad.getBoundingClientRect(); drawing = true; gctx.beginPath(); gctx.moveTo((t.clientX-r.left)/SCALE, (t.clientY-r.top)/SCALE); };
+pad.ontouchmove  = e => { e.preventDefault(); if (!drawing) return; const t = e.touches[0]; const r = pad.getBoundingClientRect(); gctx.lineTo((t.clientX-r.left)/SCALE, (t.clientY-r.top)/SCALE); gctx.stroke(); render(); };
+pad.ontouchend   = () => { drawing = false; };
+
+function getPixels() {
+    const data = gctx.getImageData(0,0,N,N).data;
+    const out = [];
+    for (let i = 0; i < N*N; i++) out.push(255 - data[i*4]);
+    return out;
+}
+
+function isEmpty() { return getPixels().every(v => v < 5); }
+
+// ── COUNTDOWN ─────────────────────────────────────────────────────────────────
+const ring = document.getElementById("countdownRing");
+const numEl = document.getElementById("countdownNum");
+const CIRCUM = 113;
+
+function startCountdown() {
+    clearInterval(countdownTimer);
+    timeLeft = 15;
+    updateRing();
+    countdownTimer = setInterval(() => {
+        timeLeft--;
+        updateRing();
+        if (timeLeft <= 0) { resetRound(); }
+    }, 1000);
+}
+
+function updateRing() {
+    numEl.textContent = timeLeft;
+    const offset = CIRCUM - (timeLeft / 15) * CIRCUM;
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = timeLeft <= 5 ? "var(--red)" : "var(--cyan)";
+    numEl.style.color = timeLeft <= 5 ? "var(--red)" : "var(--cyan)";
+}
+
+function resetRound() {
+    clearPad();
+    currentTarget = Math.floor(Math.random() * 10);
+    document.getElementById("targetDigitDisplay").textContent = currentTarget;
+    document.getElementById("resultCard").className = "result-card";
+    document.getElementById("resultCard").innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">Neue Runde — zeichne die Zahl!</div>';
+    startCountdown();
+}
+
+startCountdown();
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+        if (btn.dataset.tab === "leaderboard") loadLeaderboard();
+        if (btn.dataset.tab === "jury") loadJuryTask();
+    };
+});
+
+// ── XP / LEVEL ────────────────────────────────────────────────────────────────
+function updateXP(score) {
+    totalScore += score;
+    const level = Math.floor(totalScore / 500) + 1;
+    const xpInLevel = totalScore % 500;
+    document.getElementById("xpFill").style.width = (xpInLevel / 500 * 100) + "%";
+    document.getElementById("xpLevel").textContent = "LVL " + level;
+}
+
+// ── STREAK ────────────────────────────────────────────────────────────────────
+function updateStreak(correct) {
+    if (correct) {
+        streak++;
+    } else {
+        streak = 0;
+    }
+    document.getElementById("streakNum").textContent = streak;
+    document.getElementById("streakFire").textContent = streak >= 3 ? "🔥" : streak >= 1 ? "✨" : "";
+    const bonus = streak >= 5 ? "MEGA STREAK! x2 Trust" : streak >= 3 ? "HOT STREAK! +Bonus" : "";
+    document.getElementById("streakBonus").textContent = bonus;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type = "info") {
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.getElementById("toastContainer").appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ── FLASH ─────────────────────────────────────────────────────────────────────
+function flash(type) {
+    const el = document.getElementById("flashOverlay");
+    el.className = "flash-overlay " + type;
+    el.style.opacity = "1";
+    setTimeout(() => { el.style.opacity = "0"; }, 300);
+}
+
+// ── CLASSIFY ──────────────────────────────────────────────────────────────────
+document.getElementById("submitBtn").onclick = async () => {
+    if (isEmpty()) { showToast("Canvas ist leer!", "error"); return; }
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.textContent = "ANALYSIERE...";
+
+    try {
+        const res = await fetch("/api/classify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pixels: getPixels(), target_label: currentTarget, username: getUsername() })
+        });
+        const d = await res.json();
+
+        const correct = d.correct;
+        const score = d.score_gained;
+        const conf = d.confidence;
+
+        flash(correct ? "correct" : "wrong");
+        updateStreak(correct);
+        updateXP(score);
+
+        const rc = document.getElementById("resultCard");
+        rc.className = "result-card " + (correct ? "correct" : "wrong");
+        rc.innerHTML = `
+            <div class="result-score ${correct ? "correct" : "wrong"}">${correct ? "+" + score : "0"}</div>
+            <div class="result-label">${correct ? "ERKANNT als " + d.predicted_digit : "FALSCH erkannt als " + d.predicted_digit + " statt " + d.target_digit}</div>
+            <div class="confidence-bar-wrap">
+                <div class="confidence-bar-track">
+                    <div class="confidence-bar-fill ${correct ? "correct" : "wrong"}" id="confBar"></div>
+                </div>
+                <div class="confidence-label">
+                    <span>CONFIDENCE</span>
+                    <span>${conf.toFixed(1)}%</span>
+                </div>
+            </div>
+        `;
+        setTimeout(() => { const b = document.getElementById("confBar"); if (b) b.style.width = conf + "%"; }, 50);
+
+        showToast(correct ? `+${score} Punkte!` : "0 Punkte — weiter üben!", correct ? "success" : "error");
+
+        setTimeout(() => { resetRound(); btn.disabled = false; btn.textContent = "ANALYSIEREN"; }, 2500);
+    } catch(e) {
+        showToast("Verbindungsfehler", "error");
+        btn.disabled = false;
+        btn.textContent = "ANALYSIEREN";
+    }
+};
+
+document.getElementById("clearBtn").onclick = () => clearPad();
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+async function loadLeaderboard() {
+    try {
+        const res = await fetch("/api/leaderboard");
+        const rows = await res.json();
+        const tbody = document.getElementById("lbBody");
+        tbody.innerHTML = "";
+        rows.forEach((r, i) => {
+            const rankClass = i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "";
+            const rankSymbol = i === 0 ? "01" : i === 1 ? "02" : i === 2 ? "03" : String(i+1).padStart(2,"0");
+            const isYou = r.username === getUsername();
+            const trust = r.trust_score || 50;
+            const trustColor = trust >= 80 ? "var(--green)" : trust >= 50 ? "var(--cyan)" : "var(--red)";
+            const tr = document.createElement("tr");
+            tr.className = "lb-row";
+            tr.innerHTML = `
+                <td class="lb-rank ${rankClass}">${rankSymbol}</td>
+                <td class="lb-name ${isYou ? "is-you" : ""}">${r.username}${isYou ? " ◀" : ""}</td>
+                <td><span class="trust-pip"><span class="trust-dot" style="background:${trustColor}"></span>${trust}</span></td>
+                <td class="lb-score">${r.score}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted);">Noch keine Einträge</td></tr>';
+    } catch(e) { showToast("Leaderboard-Fehler", "error"); }
+}
+
+// ── JURY ──────────────────────────────────────────────────────────────────────
+const juryCanvas = document.createElement("canvas");
+juryCanvas.id = "juryCanvas";
+juryCanvas.width = 280; juryCanvas.height = 280;
+juryCanvas.style.cssText = "display:block;border:1px solid var(--border);border-radius:8px;image-rendering:pixelated;box-shadow:0 0 20px var(--purple-dim);";
+
+async function loadJuryTask() {
+    const container = document.getElementById("juryContent");
+    container.innerHTML = '<div class="jury-empty"><div class="jury-empty-icon">⏳</div><div class="jury-empty-text">Lade Aufgabe...</div></div>';
+    try {
+        const res = await fetch("/api/jury/task?username=" + encodeURIComponent(getUsername()));
+        const task = await res.json();
+        currentJuryTask = task;
+
+        if (!task) {
+            container.innerHTML = '<div class="jury-empty"><div class="jury-empty-icon">✅</div><div class="jury-empty-text">Alle Aufgaben erledigt. Zeichne mehr Ziffern!</div></div>';
+            return;
+        }
+
+        juryTaskCount++;
+        document.getElementById("juryBadge").textContent = juryTaskCount;
+
+        const jc = document.createElement("canvas");
+        jc.width = 280; jc.height = 280;
+        jc.style.cssText = "display:block;border:1px solid var(--border);border-radius:8px;image-rendering:pixelated;box-shadow:0 0 20px var(--purple-dim);";
+        const jctx = jc.getContext("2d");
+        jctx.imageSmoothingEnabled = false;
+
+        const pixels = task.pixels.split(",").map(Number);
+        const imgData = jctx.createImageData(N, N);
+        for (let i = 0; i < N*N; i++) {
+            const v = 255 - pixels[i];
+            imgData.data[i*4]   = v;
+            imgData.data[i*4+1] = v;
+            imgData.data[i*4+2] = v;
+            imgData.data[i*4+3] = 255;
+        }
+        const tmp = document.createElement("canvas");
+        tmp.width = N; tmp.height = N;
+        tmp.getContext("2d").putImageData(imgData, 0, 0);
+        jctx.drawImage(tmp, 0, 0, 280, 280);
+
+        container.innerHTML = "";
+        const layout = document.createElement("div");
+        layout.className = "jury-layout";
+
+        const left = document.createElement("div");
+        left.className = "jury-preview-wrap";
+        left.appendChild(jc);
+
+        const right = document.createElement("div");
+        right.className = "jury-meta";
+        right.innerHTML = `
+            <div class="jury-stat-row">
+                <div class="jury-stat">
+                    <div class="jury-stat-val">${task.target_label}</div>
+                    <div class="jury-stat-label">SOLLTE SEIN</div>
+                </div>
+                <div class="jury-stat">
+                    <div class="jury-stat-val" style="color:var(--cyan)">${task.predicted_label}</div>
+                    <div class="jury-stat-label">KI ERKANNTE</div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:12px;">
+                Gezeichnet von <span style="color:var(--purple);font-family:'JetBrains Mono',monospace;">${task.creator}</span>.
+                Stimmt die KI-Erkennung?
+            </div>
+            <div class="verdict-btns">
+                <button class="verdict-btn correct-btn" onclick="submitVote('correct')">✅ &nbsp;STIMMT — KI hat recht</button>
+                <button class="verdict-btn wrong-btn"   onclick="submitVote('wrong')">❌ &nbsp;FALSCH — KI hat sich geirrt</button>
+                <button class="verdict-btn troll-btn"   onclick="submitVote('troll')">🚫 &nbsp;SPAM / TROLL</button>
+            </div>
+        `;
+
+        layout.appendChild(left);
+        layout.appendChild(right);
+        container.appendChild(layout);
+    } catch(e) {
+        container.innerHTML = '<div class="jury-empty"><div class="jury-empty-icon">⚠️</div><div class="jury-empty-text">Fehler beim Laden</div></div>';
+    }
+}
+
+async function submitVote(vote) {
+    if (!currentJuryTask) return;
+    try {
+        await fetch("/api/jury/vote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: currentJuryTask.id, vote, validator_name: getUsername() })
+        });
+        showToast(vote === "correct" ? "+5 Punkte für Validierung!" : "Stimme abgegeben!", "success");
+        updateXP(5);
+        loadJuryTask();
+    } catch(e) { showToast("Fehler beim Abstimmen", "error"); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadLeaderboard();
+setInterval(loadLeaderboard, 15000);
+</script>
 </body>
 </html>
