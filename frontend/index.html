@@ -857,12 +857,29 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 // ── XP / LEVEL ────────────────────────────────────────────────────────────────
+function updateBrush(totalScore) {
+    if (totalScore >= 1000) {
+        gctx.lineWidth = 4.5;
+        gctx.strokeStyle = "#bf5fff";
+    } else if (totalScore >= 500) {
+        gctx.lineWidth = 3.5;
+        gctx.strokeStyle = "#00f5ff";
+    } else if (totalScore >= 200) {
+        gctx.lineWidth = 3.0;
+        gctx.strokeStyle = "#00ff88";
+    } else {
+        gctx.lineWidth = 2.5;
+        gctx.strokeStyle = "#000000";
+    }
+}
+
 function updateXP(score) {
     totalScore += score;
     const level = Math.floor(totalScore / 500) + 1;
     const xpInLevel = totalScore % 500;
     document.getElementById("xpFill").style.width = (xpInLevel / 500 * 100) + "%";
     document.getElementById("xpLevel").textContent = "LVL " + level;
+    updateBrush(totalScore);
 }
 
 // ── STREAK ────────────────────────────────────────────────────────────────────
