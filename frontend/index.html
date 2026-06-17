@@ -703,6 +703,9 @@
                     </div>
                     <button class="btn-clear" id="clearBtn">CLEAR</button>
                 </div>
+                <div id="brushInfo" style="margin-top:10px;font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--text-muted);">&#128394; BASIS  |  Naechstes Unlock bei 1000 Punkten</div>
+                <div style="display:none">
+                </div>
             </div>
 
             <div class="creator-right">
@@ -858,7 +861,26 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 
 // ── XP / LEVEL ────────────────────────────────────────────────────────────────
 function updateBrush(totalScore) {
-    if (totalScore >= 1000) {
+    const brushLevels = [
+        { min: 5000, width: 5.0, color: "#ff4466", name: "ULTRA", next: null },
+        { min: 3000, width: 4.5, color: "#bf5fff", name: "PURPLE", next: 5000 },
+        { min: 1000, width: 3.5, color: "#00f5ff", name: "CYAN", next: 3000 },
+        { min: 0,    width: 2.5, color: "#000000", name: "BASIS", next: 1000 }
+    ];
+    const current = brushLevels.find(b => totalScore >= b.min);
+    gctx.lineWidth = current.width;
+    gctx.strokeStyle = current.color;
+    const info = document.getElementById("brushInfo");
+    if (info) {
+        if (current.next) {
+            info.textContent = "{1F58A} " + current.name + "  |  N00e4chstes Unlock bei " + current.next + " Punkten";
+        } else {
+            info.textContent = "{1F58A} " + current.name + "  |  MAX LEVEL!";
+        }
+    }
+    return;
+    // legacy - wird nicht mehr erreicht
+    if (totalScore >= 99999) {
         gctx.lineWidth = 4.5;
         gctx.strokeStyle = "#bf5fff";
     } else if (totalScore >= 500) {
